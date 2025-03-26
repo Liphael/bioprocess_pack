@@ -1,2 +1,2 @@
 Pandas
-PyQt5
+Pyside6
