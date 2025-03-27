@@ -1,0 +1,5 @@
+﻿index_num,name,type,quantity
+1,CDM-1,basal,
+2,CDF-3E,mass_ratio,7
+3,CDF-3F,fix_ratio,3
+4,GLUC,target_condense,4.5

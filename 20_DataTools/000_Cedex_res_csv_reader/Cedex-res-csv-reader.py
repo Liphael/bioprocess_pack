@@ -20,7 +20,7 @@ fseq = 1
 
 # dataframe construction
 for f in dic:
-    if "res" in f and f.endswith(".csv"):
+    if "res" in f and f.endswiteth(".csv"):
         fpath = f
 
         # setting effective columns
