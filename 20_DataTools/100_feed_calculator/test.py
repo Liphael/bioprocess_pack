@@ -1,10 +1,13 @@
 import sys
 import pandas as pd
 
+
+from PySide6.QtCore import QAbstractTableModel,Qt
 from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QFileDialog
 from Ui_mainwindow import Ui_MainWindow
 
 
+global log
 # define the main window class
 class NexusWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -13,44 +16,52 @@ class NexusWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.bind_click()
         global default_path
-        default_path = "./"
+        default_path = './'
 
     def bind_click(self):
         self.calculate_button.clicked.connect(self.calculate)
         self.calculate_button.clicked.connect(self.show_output)
-        self.load_stra_button.clicked.connect(self.load_path)
-        self.load_stra_button_2.clicked.connect(self.load_path)
+        self.load_stra_button.clicked.connect(self.load_strategies)
+        self.load_stra_button_2.clicked.connect(self.load_strategies)
         
 
     def load_path(self):
         global f_path
-        f_path = QFileDialog.getOpenFileName(
-            self,
-            "Open File",
-            "./feed_plan",
-            "CSV Files (*.csv)"
-        )
-        self.lineedit_path.setText(f_path[0])
+        try:
+            f_path = QFileDialog.getOpenFileName(
+                self,
+                'Open File',
+                './feed_plan',
+                'CSV Files (*.csv)'
+            )[0]
+        except FileNotFoundError:
+            log = log + '\\File not found!'
+        self.lineedit_path.setText(f_path)
 
 
     def load_strategies(self):
-        stra = strategy = pd.read_csv(
-            f_path,
-            encoding = "utf8",
-            sep = ",",
-            dtype = {"Index":int,"Name":str,"Type":str,"Quantity":float},
-            na_values = "NaN",
-            thousands = ",",
-            decimal = ".",
-        )[col]
+        self.load_path()
+        with open(f_path, encoding='utf8') as f:
+            stra = strategy = pd.read_csv(
+                f,
+                encoding = 'utf8',
+                sep = ',',
+                dtype = {'index':int,'name':str,'type':str,'quantity':float},
+                na_values = 'NaN',
+                thousands = ',',
+                decimal = '.',
+            )
+        f.close()
+        strategy_model = QAbstractTableModel.data
+        self.tableview_stra.setModel(strategy_model)
 
     
     def save_strategies(self):
-        print("save_strategies")
+        print('save_strategies')
 
 
     def save_configs(self):
-        print("save_configs")
+        print('save_configs')
 
 
     def calculate(self):

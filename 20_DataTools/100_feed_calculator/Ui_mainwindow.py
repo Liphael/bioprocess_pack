@@ -17,9 +17,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox, QGridLayout,
     QGroupBox, QHBoxLayout, QHeaderView, QLabel,
-    QLineEdit, QMainWindow, QPushButton, QSizePolicy,
-    QSpinBox, QStatusBar, QTabWidget, QTableWidget,
-    QTableWidgetItem, QTextBrowser, QVBoxLayout, QWidget)
+    QLineEdit, QMainWindow, QPushButton, QScrollBar,
+    QSizePolicy, QSpinBox, QStatusBar, QTabWidget,
+    QTableView, QTableWidget, QTableWidgetItem, QTextBrowser,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -229,24 +230,44 @@ class Ui_MainWindow(object):
         self.tab_feed.setObjectName(u"tab_feed")
         self.groupBox_2 = QGroupBox(self.tab_feed)
         self.groupBox_2.setObjectName(u"groupBox_2")
-        self.groupBox_2.setGeometry(QRect(20, 40, 921, 161))
-        self.widget = QWidget(self.groupBox_2)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(20, 30, 861, 25))
-        self.horizontalLayout = QHBoxLayout(self.widget)
+        self.groupBox_2.setGeometry(QRect(20, 40, 921, 481))
+        self.layoutWidget2 = QWidget(self.groupBox_2)
+        self.layoutWidget2.setObjectName(u"layoutWidget2")
+        self.layoutWidget2.setGeometry(QRect(20, 30, 861, 25))
+        self.horizontalLayout = QHBoxLayout(self.layoutWidget2)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.lineedit_path = QLineEdit(self.widget)
+        self.lineedit_path = QLineEdit(self.layoutWidget2)
         self.lineedit_path.setObjectName(u"lineedit_path")
 
         self.horizontalLayout.addWidget(self.lineedit_path)
 
-        self.load_stra_button_2 = QPushButton(self.widget)
+        self.load_stra_button_2 = QPushButton(self.layoutWidget2)
         self.load_stra_button_2.setObjectName(u"load_stra_button_2")
         sizePolicy3.setHeightForWidth(self.load_stra_button_2.sizePolicy().hasHeightForWidth())
         self.load_stra_button_2.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout.addWidget(self.load_stra_button_2)
+
+        self.tableview_stra = QTableView(self.groupBox_2)
+        self.tableview_stra.setObjectName(u"tableview_stra")
+        self.tableview_stra.setGeometry(QRect(20, 270, 256, 192))
+        self.widget = QWidget(self.groupBox_2)
+        self.widget.setObjectName(u"widget")
+        self.widget.setGeometry(QRect(20, 70, 861, 194))
+        self.horizontalLayout_2 = QHBoxLayout(self.widget)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.textbrowser_stra = QTextBrowser(self.widget)
+        self.textbrowser_stra.setObjectName(u"textbrowser_stra")
+
+        self.horizontalLayout_2.addWidget(self.textbrowser_stra)
+
+        self.verticalScrollBar = QScrollBar(self.widget)
+        self.verticalScrollBar.setObjectName(u"verticalScrollBar")
+        self.verticalScrollBar.setOrientation(Qt.Orientation.Vertical)
+
+        self.horizontalLayout_2.addWidget(self.verticalScrollBar)
 
         self.tabWidget.addTab(self.tab_feed, "")
         MainWindow.setCentralWidget(self.centralwidget)
