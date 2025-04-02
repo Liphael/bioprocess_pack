@@ -1,5 +1,5 @@
-﻿index_num,name,type,quantity
-1,CDM-1,basal,
-2,CDF-3E,mass_ratio,7
-3,CDF-3F,fix_ratio,3
-4,GLUC,target_condense,4.5
+﻿name,type,quantity,unit
+CDM-1,基础培养基,
+CDF-3E,当前质量百分比,7,%
+CDF-3F,初始质量百分比,3,%
+GLUC,补至目标浓度,4.5,g/L

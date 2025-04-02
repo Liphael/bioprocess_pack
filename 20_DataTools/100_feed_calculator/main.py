@@ -8,6 +8,32 @@ from Ui_mainwindow import Ui_MainWindow
 
 
 global log
+
+# define the data model class
+class DataModel(QAbstractTableModel):
+    def __init__(self, data):
+        super().__init__()
+        self._data = data
+
+    def rowCount(self, parent=None):
+        return len(self._data)
+
+    def columnCount(self, parent=None):
+        return len(self._data.columns)
+
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            return str(self._data.iloc[index.row(), index.column()])
+        return None
+    
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return str(self._data.columns[section])
+            else:
+                return str(section + 1)
+        return None
+
 # define the main window class
 class NexusWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -46,14 +72,17 @@ class NexusWindow(QMainWindow, Ui_MainWindow):
                 f,
                 encoding = 'utf8',
                 sep = ',',
-                dtype = {'index':int,'name':str,'type':str,'quantity':float},
-                na_values = 'NaN',
+                header = 0,
+                dtype = {'name':str,'type':str,'quantity':float,'unit':str},
+                names = ['name','type','quantity','unit'],
+                na_values = 'null',
                 thousands = ',',
                 decimal = '.',
             )
         f.close()
-        strategy_model = QAbstractTableModel.data
-        self.tableview_stra.setModel(strategy_model)
+        stra_model = DataModel(stra)
+        self.tableview_stra.setModel(stra_model)
+        self.tableview_stra2.setModel(stra_model)
 
     
     def save_strategies(self):
