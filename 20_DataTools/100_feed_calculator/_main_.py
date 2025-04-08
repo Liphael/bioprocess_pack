@@ -1,83 +1,172 @@
+import os
 import sys
+import pandas as pd
+import json
+import configparser
+import yaml
 
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QWidget, QLabel, QLineEdit, QPushButton
+from pathlib import Path
+import stra_editor
+
+from PySide6.QtCore import QAbstractTableModel,Qt
+from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QFileDialog
+from Ui_mainwindow import Ui_MainWindow
+
+
+global log
+global default_path
+default_path = './'
+
+
+# define the datamodel class
+# This class is used to formulate data in the pyside-tableview
+class DataModel(QAbstractTableModel):
+    def __init__(self, data):
+        super().__init__()
+        self._data = data
+
+    def rowCount(self, parent=None):
+        return len(self._data)
+
+    def columnCount(self, parent=None):
+        return len(self._data.columns)
+
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            return str(self._data.iloc[index.row(), index.column()])
+        return None
+    
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return str(self._data.columns[section])
+            else:
+                return str(section + 1)
+        return None
+
+class CfgEditor:
+    Supported_Formats = {'json', 'ini', 'yaml', 'yml'}
+    
+    def __init__(self):
+        self.signals = ConfigSignal()
+        self.current_path = None
+        self.file_type = None
+        self.config_data = None
+
+    ## automatically detect the file type
+    def detect_file_type(self, file_path):
+        f_sfx = file_suffix = Path(file_path).suffix.lower()[1:]
+        if f_sfx in {'yaml', 'yml'}:
+            return 'yaml'
+        return f_sfx if f_sfx in self.Supported_Formats else None
+
+    ## load the config file
+    def load_config(self, file_path):
+        try:
+            self.file_type = self.detect_file_type(file_path)
+            if not self.file_type:
+                raise ValueError("不支持的配置文件格式")
+
+            with open(file_path, 'r', encoding='utf-8') as f:
+                if self.file_type == 'json':
+                    self.config_data = json.load(f)
+                elif self.file_type == 'ini':
+                    config = configparser.ConfigParser()
+                    config.read_file(f)
+                    self.config_data = {s: dict(config.items(s)) 
+                                      for s in config.sections()}
+                elif self.file_type in ('yaml', 'yml'):
+                    self.config_data = yaml.safe_load(f)
+
+            self.current_path = file_path
+            self.signals.config_loaded.emit(file_path)
+            return True
+
+        except Exception as e:
+            self.signals.error_occurred.emit(f"加载失败: {str(e)}")
+            return False
+
+    def save_config(self, save_path=None):
+        """保存配置文件"""
+        try:
+            save_path = save_path or self.current_path
+            if not save_path:
+                raise ValueError("未指定保存路径")
+
+            with open(save_path, 'w', encoding='utf-8') as f:
+                if self.file_type == 'json':
+                    json.dump(self.config_data, f, indent=2)
+                elif self.file_type == 'ini':
+                    config = configparser.ConfigParser()
+                    for section, items in self.config_data.items():
+                        config.add_section(section)
+                        for key, value in items.items():
+                            config.set(section, key, str(value))
+                    config.write(f)
+                elif self.file_type in ('yaml', 'yml'):
+                    yaml.dump(self.config_data, f, default_flow_style=False)
+
+            self.signals.config_saved.emit(save_path)
+            return True
+
+        except Exception as e:
+            self.signals.error_occurred.emit(f"保存失败: {str(e)}")
+            return False
 
 
 # define the main window class
-class NexusWindow(QMainWindow):
-    ## define the main window function
+class NexusWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
+        ## Set up the user interface from Designer.
+        self.setupUi(self)
+        self.bind_click()
+        self.load_strategies()
 
-        ### set main window layout
-        nexuslayout = QVBoxLayout()
-        self.resize(1000,600)
-        self.setWindowOpacity(0.96)
+    def bind_click(self):
+        self.calculate_button.clicked.connect(self.calculate)
+        self.calculate_button.clicked.connect(self.show_output)
+        self.load_stra_button.clicked.connect(self.load_strategies)
+        self.load_stra_button_2.clicked.connect(self.load_strategies)
+        
+#######################
 
-        button = QPushButton("#")
-        button.clicked.connect(self.hello)
+    ##todo: strategy editor & save the strategies to files
+    def strategy_editor(self):
+        self.stra_editor = stra_editor.ExcelEditor(self)
 
-        nexuslayout.addWidget(button)
-        self.setLayout(nexuslayout)
 
-    def hello(self):
-        print("Hello New User!")
+    def save_configs(self):
+        print('save_configs')
+
+
+    def calculate(self):
+        ## read the values from the spinboxes
+        global be_vol
+        be_vol = before_volume = float(self.spinbox_before_sampling.value())
+        global sa_vol
+        sa_vol = sample_volume = float(self.spinbox_sampling.value())
+
+        ## calculate the feed volume
+        global af_vol
+        af_vol = after_volume = be_vol - sa_vol
+
+
+    def show_output(self):
+        output_text = f"""
+        取样前体系质量为：
+        {be_vol}  (g)(ml)
+        取样量为：
+        {sa_vol}  (g)(ml)
+        取样后体系质量为：
+        {af_vol}  (g)(ml)
+        """
+        self.textbrowser_output.setText(output_text)
 
 
 # define the main window function
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     wid = window = NexusWindow()
-
-
-    ## window settings
-    ### title&icon
-    wid.setWindowTitle("生物过程补料计算器")
-    wid.setWindowIcon(QIcon('biotech.svg'))
-
-
-    ## gui 
-
-    ### input gui
-    #### gui label
-    input_title_label = QLabel("计算参数",wid)
-    input_title_label.setGeometry(550,125,200,50)
-    sampling_label = QLabel("取样量:",wid)
-    sampling_label.setGeometry(200,200,200,70)
-    before_sampling_label = QLabel("取样前体系质量:",wid)
-    before_sampling_label.setGeometry(200,300,200,70)
-    after_sampling_label = QLabel("取样后体系质量:",wid)
-    after_sampling_note_label =QLabel("*必填*",wid)
-    after_sampling_label.setGeometry(200,400,200,70)
-    after_sampling_note_label.setGeometry(925,400,100,70)
-    #### gui inputline
-    input_sampling_line = QLineEdit("输入 取样量",wid)
-    input_sampling_line.setGeometry(520,200,400,70)
-    input_before_sampling_line = QLineEdit("输入 取样前体系质量",wid)
-    input_before_sampling_line.setGeometry(520,300,400,70)
-    input_after_sampling_line = QLineEdit("输入 取样后体系质量",wid)
-    input_after_sampling_line.setGeometry(520,400,400,70)
-
-    ### parameters gui
-    #### gui label
-    feed_strategy_label = QLabel("将执行的补料策略：",wid)
-    feed_strategy_label.setGeometry(40,150,300,50)
-    feed_result_label = QLabel("所需的补料量：",wid)
-    feed_result_label.setGeometry(40,400,300,50)
-    #### gui button
-    plan_deploy_btn = QPushButton("设置补料策略",wid)
-    plan_deploy_btn.setGeometry(500,50,200,50)
-
-    ### execute gui
-    #### gui buttons
-    calculate_btn = QPushButton("开始计算",wid)
-    calculate_btn.setGeometry(600,500,200,50)
-
-
-    ## generate window
     wid.show()
-
-
-    ## waiting status loop
     app.exec()
