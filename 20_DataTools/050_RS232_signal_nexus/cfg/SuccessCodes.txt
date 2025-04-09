@@ -1,0 +1,4 @@
+#0000: [通用信息] 执行成功; exec success
+#0001: 已连接 {port} [波特率 {baudrate}]
+#0002: 开始监听 {port} (按 Ctrl+C 停止)...
+#0003: 串口连接已关闭; COM device disconnected
