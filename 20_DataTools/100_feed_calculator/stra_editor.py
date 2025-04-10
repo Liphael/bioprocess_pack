@@ -5,7 +5,18 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWi
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
 
-class ExcelEditor(QMainWindow):
+
+global log
+global process_info
+process_info = None  # 用于存储进程信息
+
+global default_path
+global current_path
+default_path = './'
+current_path = os.path.abspath(os.path.dirname(__file__)) # 获取当前文件所在目录的绝对路径
+
+
+class StrategyEditor(QMainWindow):
     def __init__(self):
         super().__init__()
         self.file_path = None

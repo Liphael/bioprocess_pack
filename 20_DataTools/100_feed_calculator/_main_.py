@@ -14,13 +14,21 @@ from Ui_mainwindow import Ui_MainWindow
 
 
 global log
+global process_info
+process_info = None  # 用于存储进程信息
+
 global default_path
+global current_path
 default_path = './'
+current_path = os.path.abspath(os.path.dirname(__file__)) # 获取当前文件所在目录的绝对路径
+
+
 
 
 # define the datamodel class
 # This class is used to formulate data in the pyside-tableview
 class DataModel(QAbstractTableModel):
+    global process_info
     def __init__(self, data):
         super().__init__()
         self._data = data
@@ -45,6 +53,7 @@ class DataModel(QAbstractTableModel):
         return None
 
 class CfgEditor:
+    global process_info
     Supported_Formats = {'json', 'ini', 'yaml', 'yml'}
     
     def __init__(self):
@@ -52,6 +61,7 @@ class CfgEditor:
         self.current_path = None
         self.file_type = None
         self.config_data = None
+
 
     ## automatically detect the file type
     def detect_file_type(self, file_path):
@@ -114,14 +124,25 @@ class CfgEditor:
             return False
 
 
-# define the main window class
+'''主窗体与主窗体功能类'''
 class NexusWindow(QMainWindow, Ui_MainWindow):
+    global current_path
+    global process_info
+
+
     def __init__(self):
-        super().__init__()
-        ## Set up the user interface from Designer.
+        super().__init__() ## Set up the user interface from Designer.
         self.setupUi(self)
         self.bind_click()
-        self.load_strategies()
+        self.default_strategies()
+
+        global be_vol
+        global sa_vol
+        global af_vol
+        be_vol = 0.0
+        sa_vol = 0.0
+        af_vol = 0.0
+
 
     def bind_click(self):
         self.calculate_button.clicked.connect(self.calculate)
@@ -129,7 +150,74 @@ class NexusWindow(QMainWindow, Ui_MainWindow):
         self.load_stra_button.clicked.connect(self.load_strategies)
         self.load_stra_button_2.clicked.connect(self.load_strategies)
         
-#######################
+    def default_strategies(self):
+        try:
+            self.f_path = current_path + '\\cfg\\default.csv'
+            self.lineedit_path.setText(self.f_path)
+            with open(self.f_path, encoding='utf8') as f:
+                stra = strategy = pd.read_csv(
+                    f,
+                    encoding = 'utf8',
+                    sep = ',',
+                    header = 0,
+                    dtype = {'name':str,'type':str,'quantity':float,'unit':str},
+                    names = ['name','type','quantity','unit'],
+                    na_values = 'null',
+                    thousands = ',',
+                    decimal = '.',
+                )
+            f.close()
+            stra_model = DataModel(stra)
+            self.tableview_stra.setModel(stra_model)
+            self.tableview_stra2.setModel(stra_model)
+
+        except FileNotFoundError:
+            process_info = f"error#0010: default_strategy.csv file from <{self.f_path}> not found"
+            print(process_info)
+            self.f_path = None
+            return False
+        
+        self.lineedit_path.setText(self.f_path)
+
+
+    def load_csv(self):
+        try:
+            self.f_path = QFileDialog.getOpenFileName(
+                self,
+                'Open File',
+                current_path,
+                'CSV Files (*.csv)'
+            )[0]
+            print(self.f_path)
+            return self.f_path
+
+        except FileNotFoundError:
+            process_info = f"error#0011: [general msg] file not found"
+            print(process_info)
+            self.f_path = None
+            return self.f_path
+
+        self.lineedit_path.setText(self.f_path)
+
+
+    def load_strategies(self):
+        self.load_csv()
+        with open(self.f_path, encoding='utf8') as f:
+            stra = strategy = pd.read_csv(
+                f,
+                encoding = 'utf8',
+                sep = ',',
+                header = 0,
+                dtype = {'name':str,'type':str,'quantity':float,'unit':str},
+                names = ['name','type','quantity','unit'],
+                na_values = 'null',
+                thousands = ',',
+                decimal = '.',
+            )
+        f.close()
+        stra_model = DataModel(stra)
+        self.tableview_stra.setModel(stra_model)
+        self.tableview_stra2.setModel(stra_model)
 
     ##todo: strategy editor & save the strategies to files
     def strategy_editor(self):
@@ -142,13 +230,10 @@ class NexusWindow(QMainWindow, Ui_MainWindow):
 
     def calculate(self):
         ## read the values from the spinboxes
-        global be_vol
         be_vol = before_volume = float(self.spinbox_before_sampling.value())
-        global sa_vol
         sa_vol = sample_volume = float(self.spinbox_sampling.value())
 
         ## calculate the feed volume
-        global af_vol
         af_vol = after_volume = be_vol - sa_vol
 
 
