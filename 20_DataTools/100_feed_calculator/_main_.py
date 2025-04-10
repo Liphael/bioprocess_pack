@@ -188,7 +188,6 @@ class NexusWindow(QMainWindow, Ui_MainWindow):
                 current_path,
                 'CSV Files (*.csv)'
             )[0]
-            print(self.f_path)
             return self.f_path
 
         except FileNotFoundError:
