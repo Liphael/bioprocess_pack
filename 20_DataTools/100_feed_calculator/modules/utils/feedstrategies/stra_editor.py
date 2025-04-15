@@ -213,8 +213,9 @@ class StrategyEditor(QMainWindow):
         else:
             event.accept()
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    editor = ExcelEditor()
+    editor = StrategyEditor()
     editor.show()
     sys.exit(app.exec())

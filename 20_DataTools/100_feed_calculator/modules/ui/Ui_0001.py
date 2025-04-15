@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'mainwindow.ui'
+## Form generated from reading UI file '0001.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -27,6 +27,9 @@ class Ui_MainWindow(object):
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(1000, 600)
         MainWindow.setMinimumSize(QSize(250, 150))
+        icon = QIcon()
+        icon.addFile(u"icons/biotech.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        MainWindow.setWindowIcon(icon)
         MainWindow.setWindowOpacity(0.960000000000000)
         MainWindow.setDockOptions(QMainWindow.DockOption.AllowTabbedDocks|QMainWindow.DockOption.AnimatedDocks)
         self.centralwidget = QWidget(MainWindow)
@@ -87,15 +90,15 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.calculate_button)
 
-        self.widget = QWidget(self.Input_box)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(22, 31, 244, 101))
-        self.horizontalLayout_2 = QHBoxLayout(self.widget)
+        self.layoutWidget1 = QWidget(self.Input_box)
+        self.layoutWidget1.setObjectName(u"layoutWidget1")
+        self.layoutWidget1.setGeometry(QRect(22, 31, 244, 101))
+        self.horizontalLayout_2 = QHBoxLayout(self.layoutWidget1)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_2 = QVBoxLayout()
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.label_4 = QLabel(self.widget)
+        self.label_4 = QLabel(self.layoutWidget1)
         self.label_4.setObjectName(u"label_4")
         font = QFont()
         font.setPointSize(10)
@@ -103,13 +106,13 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_2.addWidget(self.label_4)
 
-        self.label_5 = QLabel(self.widget)
+        self.label_5 = QLabel(self.layoutWidget1)
         self.label_5.setObjectName(u"label_5")
         self.label_5.setFont(font)
 
         self.verticalLayout_2.addWidget(self.label_5)
 
-        self.label_6 = QLabel(self.widget)
+        self.label_6 = QLabel(self.layoutWidget1)
         self.label_6.setObjectName(u"label_6")
         self.label_6.setFont(font)
 
@@ -120,7 +123,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout = QGridLayout()
         self.gridLayout.setObjectName(u"gridLayout")
-        self.spinbox_before_sampling = QDoubleSpinBox(self.widget)
+        self.spinbox_before_sampling = QDoubleSpinBox(self.layoutWidget1)
         self.spinbox_before_sampling.setObjectName(u"spinbox_before_sampling")
         sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         sizePolicy3.setHorizontalStretch(0)
@@ -134,7 +137,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.spinbox_before_sampling, 1, 0, 1, 1)
 
-        self.spinbox_sampling = QSpinBox(self.widget)
+        self.spinbox_sampling = QSpinBox(self.layoutWidget1)
         self.spinbox_sampling.setObjectName(u"spinbox_sampling")
         sizePolicy3.setHeightForWidth(self.spinbox_sampling.sizePolicy().hasHeightForWidth())
         self.spinbox_sampling.setSizePolicy(sizePolicy3)
@@ -144,7 +147,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.spinbox_sampling, 0, 0, 1, 1)
 
-        self.spinbox_gluc = QDoubleSpinBox(self.widget)
+        self.spinbox_gluc = QDoubleSpinBox(self.layoutWidget1)
         self.spinbox_gluc.setObjectName(u"spinbox_gluc")
         sizePolicy3.setHeightForWidth(self.spinbox_gluc.sizePolicy().hasHeightForWidth())
         self.spinbox_gluc.setSizePolicy(sizePolicy3)
@@ -159,27 +162,27 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addLayout(self.gridLayout)
 
-        self.widget1 = QWidget(self.Input_box)
-        self.widget1.setObjectName(u"widget1")
-        self.widget1.setGeometry(QRect(270, 31, 131, 101))
-        self.horizontalLayout_3 = QHBoxLayout(self.widget1)
+        self.layoutWidget2 = QWidget(self.Input_box)
+        self.layoutWidget2.setObjectName(u"layoutWidget2")
+        self.layoutWidget2.setGeometry(QRect(270, 31, 131, 101))
+        self.horizontalLayout_3 = QHBoxLayout(self.layoutWidget2)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.horizontalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_5 = QVBoxLayout()
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.label_10 = QLabel(self.widget1)
+        self.label_10 = QLabel(self.layoutWidget2)
         self.label_10.setObjectName(u"label_10")
         self.label_10.setFont(font)
 
         self.verticalLayout_5.addWidget(self.label_10)
 
-        self.label_8 = QLabel(self.widget1)
+        self.label_8 = QLabel(self.layoutWidget2)
         self.label_8.setObjectName(u"label_8")
         self.label_8.setFont(font)
 
         self.verticalLayout_5.addWidget(self.label_8)
 
-        self.label_9 = QLabel(self.widget1)
+        self.label_9 = QLabel(self.layoutWidget2)
         self.label_9.setObjectName(u"label_9")
         self.label_9.setFont(font)
 
@@ -190,7 +193,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_6 = QVBoxLayout()
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.combox_sampling = QComboBox(self.widget1)
+        self.combox_sampling = QComboBox(self.layoutWidget2)
         self.combox_sampling.addItem("")
         self.combox_sampling.addItem("")
         self.combox_sampling.addItem("")
@@ -198,7 +201,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_6.addWidget(self.combox_sampling)
 
-        self.combox_before_sampling = QComboBox(self.widget1)
+        self.combox_before_sampling = QComboBox(self.layoutWidget2)
         self.combox_before_sampling.addItem("")
         self.combox_before_sampling.addItem("")
         self.combox_before_sampling.addItem("")
@@ -209,7 +212,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_6.addWidget(self.combox_before_sampling)
 
-        self.combox_before_sampling_2 = QComboBox(self.widget1)
+        self.combox_before_sampling_2 = QComboBox(self.layoutWidget2)
         self.combox_before_sampling_2.addItem("")
         self.combox_before_sampling_2.addItem("")
         self.combox_before_sampling_2.addItem("")
@@ -236,20 +239,20 @@ class Ui_MainWindow(object):
         self.groupBox_2 = QGroupBox(self.tab_feed)
         self.groupBox_2.setObjectName(u"groupBox_2")
         self.groupBox_2.setGeometry(QRect(20, 40, 921, 481))
-        self.widget2 = QWidget(self.groupBox_2)
-        self.widget2.setObjectName(u"widget2")
-        self.widget2.setGeometry(QRect(20, 30, 571, 421))
-        self.verticalLayout = QVBoxLayout(self.widget2)
+        self.layoutWidget3 = QWidget(self.groupBox_2)
+        self.layoutWidget3.setObjectName(u"layoutWidget3")
+        self.layoutWidget3.setGeometry(QRect(20, 30, 571, 421))
+        self.verticalLayout = QVBoxLayout(self.layoutWidget3)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.lineedit_path = QLineEdit(self.widget2)
+        self.lineedit_path = QLineEdit(self.layoutWidget3)
         self.lineedit_path.setObjectName(u"lineedit_path")
 
         self.horizontalLayout.addWidget(self.lineedit_path)
 
-        self.load_stra_button_2 = QPushButton(self.widget2)
+        self.load_stra_button_2 = QPushButton(self.layoutWidget3)
         self.load_stra_button_2.setObjectName(u"load_stra_button_2")
 
         self.horizontalLayout.addWidget(self.load_stra_button_2)
@@ -257,7 +260,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
-        self.tableview_stra = QTableView(self.widget2)
+        self.tableview_stra = QTableView(self.layoutWidget3)
         self.tableview_stra.setObjectName(u"tableview_stra")
 
         self.verticalLayout.addWidget(self.tableview_stra)

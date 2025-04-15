@@ -19,6 +19,10 @@
   <property name="windowTitle">
    <string>&quot;生物过程补料计算器&quot;</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>icons/biotech.svg</normaloff>icons/biotech.svg</iconset>
+  </property>
   <property name="windowOpacity">
    <double>0.960000000000000</double>
   </property>
@@ -149,7 +153,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <property name="geometry">
         <rect>
          <x>22</x>
@@ -277,7 +281,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <property name="geometry">
         <rect>
          <x>270</x>
@@ -466,7 +470,7 @@
       <property name="title">
        <string>GroupBox</string>
       </property>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <property name="geometry">
         <rect>
          <x>20</x>
