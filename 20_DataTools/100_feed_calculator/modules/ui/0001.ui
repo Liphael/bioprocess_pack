@@ -49,7 +49,7 @@
      <enum>QTabWidget::TabPosition::North</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="iconSize">
      <size>
@@ -121,7 +121,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>加载策略</string>
+           <string>编辑策略</string>
           </property>
          </widget>
         </item>
@@ -495,7 +495,7 @@
           <item>
            <widget class="QPushButton" name="load_stra_button_2">
             <property name="text">
-             <string>加载策略</string>
+             <string>编辑策略</string>
             </property>
            </widget>
           </item>

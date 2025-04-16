@@ -42,7 +42,7 @@ class MainWindowUi(QMainWindow):
     def bind_clicks(self):
         self.ui.calculate_button.clicked.connect(self.calculate_button)
         self.ui.load_stra_button.clicked.connect(self.stra_editor_button)
-        #self.ui.load_stra_button_2.clicked.connect(self.load_strategies)
+        self.ui.load_stra_button_2.clicked.connect(self.stra_editor_button)
 
     def calculate_button(self):
         ## read the values from the spinboxes
@@ -56,14 +56,14 @@ class MainWindowUi(QMainWindow):
             af_vol = after_volume = be_vol - sa_vol
 
             def show_output(self):  # 继续使用函数嵌套的方式来定义输出函数
-                output_text = f"""
+                output_text = f'''
                 取样前体系质量为：
                 {be_vol}  (g)(ml)
                 取样量为：
                 {sa_vol}  (g)(ml)
                 取样后体系质量为：
                 {af_vol}  (g)(ml)
-                """
+                '''
                 self.ui.textbrowser_output.setText(output_text)
         
             show_output(self)  # 调用show_output函数，使能calculate函数显示输出结果

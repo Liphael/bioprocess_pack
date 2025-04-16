@@ -273,7 +273,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -283,7 +283,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"\"\u751f\u7269\u8fc7\u7a0b\u8865\u6599\u8ba1\u7b97\u5668\"", None))
         self.show_box.setTitle(QCoreApplication.translate("MainWindow", u"\u5c06\u6267\u884c\u7684\u8865\u6599\u7b56\u7565\uff1a", None))
         self.Input_box.setTitle(QCoreApplication.translate("MainWindow", u"\u8f93\u5165\u53c2\u6570\uff1a", None))
-        self.load_stra_button.setText(QCoreApplication.translate("MainWindow", u"\u52a0\u8f7d\u7b56\u7565", None))
+        self.load_stra_button.setText(QCoreApplication.translate("MainWindow", u"\u7f16\u8f91\u7b56\u7565", None))
         self.clear_button.setText(QCoreApplication.translate("MainWindow", u"\u6e05\u9664", None))
         self.calculate_button.setText(QCoreApplication.translate("MainWindow", u"\u8ba1\u7b97", None))
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"\u53d6\u6837\u91cf\uff1a", None))
@@ -317,7 +317,7 @@ class Ui_MainWindow(object):
         self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"GroupBox", None))
         self.lineedit_path.setText("")
         self.lineedit_path.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u9009\u62e9\u52a0\u8f7d\u6587\u4ef6\u76ee\u5f55", None))
-        self.load_stra_button_2.setText(QCoreApplication.translate("MainWindow", u"\u52a0\u8f7d\u7b56\u7565", None))
+        self.load_stra_button_2.setText(QCoreApplication.translate("MainWindow", u"\u7f16\u8f91\u7b56\u7565", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_feed), QCoreApplication.translate("MainWindow", u"\u8bbe\u7f6e\u8865\u6599\u7b56\u7565", None))
     # retranslateUi
 
