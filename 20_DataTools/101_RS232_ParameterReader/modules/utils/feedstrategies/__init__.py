@@ -1,0 +1,1 @@
+'''Feed Calculator Module subpackage'''
