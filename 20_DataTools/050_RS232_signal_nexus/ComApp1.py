@@ -1,7 +1,11 @@
 import serial
 import serial.tools.list_ports
 from datetime import datetime
+
 import sys
+import time
+import os
+import csv
 
 class RS232Monitor:
     global process_info  # 全局变量，用于存储进程信息
@@ -31,7 +35,11 @@ class RS232Monitor:
                     process_info = "error#0001: COM device not found"  # 更新进程信息
                     print(process_info)  # 打印进程信息，后期替换为日志记录或其他处理
                     return False # 无可用串口时返回False
-                port = available_ports[0] # 默认连接第一个可用串口
+                process_info = "success#0000: COM device exists"
+                print(process_info)
+                print("Which COM port should I choose? (serial number start from 0): ")
+                i = int(input()) # 输入指定串口的序号
+                port = available_ports[i] # 根据序号选择串口
 
             self.ser = serial.Serial(
                 port=port,
@@ -81,7 +89,7 @@ class RS232Monitor:
             # 转换为字符串（ASCII解码）
             decoded_data = raw_data.decode('ascii').strip()
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            print(f"[{timestamp}] RX: {decoded_data}")
+            print(f"RX|[{timestamp}]|{decoded_data}")
             
             # 此处可以添加自定义处理逻辑
             # 例如：保存到文件、触发其他操作等
@@ -90,7 +98,7 @@ class RS232Monitor:
             # 二进制数据处理
             hex_data = raw_data.hex().upper()
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            print(f"[{timestamp}] HEX: {hex_data}")
+            print(f"HEX|[{timestamp}]|{hex_data}")
 
     def stop(self):
         """停止监听并关闭连接"""
@@ -105,6 +113,10 @@ if __name__ == "__main__":
     
     # 自动连接第一个可用端口
     if not monitor.connect():
+        process_info = "error#0004: COM device not found or connect fail"
+        print(process_info)
+        print("exiting after 3 seconds...")
+        time.sleep(3)
         sys.exit(1)
     
     # 开始监听
