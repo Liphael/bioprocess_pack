@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QTreeWidget, QTreeWidg
                               QFileDialog, QMessageBox, QSplitter, QTabWidget, QMenuBar,
                               QStatusBar, QInputDialog, QPlainTextEdit, QWidget, QVBoxLayout,
                               QLabel, QHBoxLayout, QLineEdit, QCheckBox, QRadioButton, QComboBox,
-                              QTableWidget, QTableWidgetItem, QAbstractItemView)
+                              QTableWidget, QTableWidgetItem, QAbstractItemView, QPushButton)
 from PySide6.QtGui import (QAction, QIcon, QTextCursor)
 from PySide6.QtCore import (Qt, Signal, QObject, QSize)
 
@@ -30,6 +30,7 @@ class ParaReader(QMainWindow):
         self.init_menu()
         self.connect_signals()
 
+# 初始化UI界面
     def init_ui(self):
         """初始化"""
         self.setWindowTitle("Para Reader-RS232 ver_0.1.1b")
@@ -54,12 +55,17 @@ class ParaReader(QMainWindow):
         self.tree.setHeaderLabel("配置结构")
         self.tree.itemChanged.connect(self.handle_item_change)
         
-        self.tab_widget = QTabWidget()
+        """控制面板标签组"""
+        self.control_panel = QTabWidget()
+        self.init_control_panel()
+        self.control_panel.setTabPosition(QTabWidget.North) # 标签UI位置
+        self.control_panel.setMovable(False) # 禁止拖动标签
+        self.control_panel.setTabsClosable(False) # 禁止关闭标签
         
         # 使用分割器布局
         main_splitter = QSplitter(Qt.Horizontal)
         main_splitter.addWidget(self.output_showcase)
-        main_splitter.addWidget(self.tab_widget)
+        main_splitter.addWidget(self.control_panel)
         main_splitter.setSizes([600, 400])
         
         self.setCentralWidget(main_splitter)
@@ -69,7 +75,8 @@ class ParaReader(QMainWindow):
         """日志"""
         self.log_panel = QPlainTextEdit()
         self.init_log_panel()
-    
+
+# 菜单栏模块
     def init_menu(self):
         """初始化菜单系统"""
         menubar = self.menuBar()
@@ -94,6 +101,7 @@ class ParaReader(QMainWindow):
             self.cfg_save_as_action
             ])
 
+# 信号槽定义
     def connect_signals(self):
         """连接信号与槽"""
 
@@ -102,10 +110,14 @@ class ParaReader(QMainWindow):
         self.save_cfg_action.triggered.connect(self.save_cfg_file)
         self.cfg_save_as_action.triggered.connect(self.cfg_file_save_as)
 
+        # 连接编辑菜单动作按钮
+        self.start_listener_key_action.triggered.connect(self.start_listener)
+        self.export_data_key_action.triggered.connect(self.export_data_csv)
+
         # 连接信号
         self.signals.modified.connect(self.update_title) # 更新标题
 
-    # 文件操作相关方法
+# 文件操作相关方法
     def open_cfg_file(self):
         """打开配置文件对话框"""
         path, _ = QFileDialog.getOpenFileName(
@@ -179,7 +191,7 @@ class ParaReader(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "错误", f"保存失败: {str(e)}")
 
-    # 树形视图相关方法
+# 树形视图相关方法
     def build_tree(self, parent=None, data=None):
         """构建配置树形视图"""
         self.tree.clear()
@@ -243,6 +255,52 @@ class ParaReader(QMainWindow):
         """显示错误信息"""
         QMessageBox.critical(self, "错误", message)
 
+# 控制面板相关模块
+    def init_control_panel(self):
+        """初始化控制面板"""
+        self.init_operations_tab()
+        self.init_cfg_tab()
+        self.init_logs_tab()
+
+    def init_operations_tab(self):
+        """初始化操作面板"""
+        operations_tab = QWidget()
+        operations_tab_layout = QVBoxLayout()
+        
+        self.start_listener_key_action = QAction("开始监听数据", self)
+        self.export_data_key_action = QAction("导出当前数据", self)
+        
+        start_listener_button = QPushButton("添加键")
+        start_listener_button.clicked.connect(self.start_listener_key_action.trigger)
+        export_data_button = QPushButton("删除键")
+        export_data_button.clicked.connect(self.export_data_key_action.trigger)
+
+        operations_tab_layout.addWidget(start_listener_button)
+        operations_tab_layout.addWidget(export_data_button)
+        operations_tab.setLayout(operations_tab_layout)
+
+        self.control_panel.addTab(operations_tab, "操作面板")
+
+    def init_cfg_tab(self):
+        """初始化配置面板"""
+        cfg_tab = QWidget()
+        cfg_tab_layout = QVBoxLayout()
+
+        cfg_tab.setLayout(cfg_tab_layout)
+
+        self.control_panel.addTab(cfg_tab, "配置面板")
+        
+    
+    def init_logs_tab(self):
+        """初始化日志面板"""
+        log_tab = QWidget()
+        log_tab_layout = QVBoxLayout()
+        
+        log_tab.setLayout(log_tab_layout)
+        
+        self.control_panel.addTab(log_tab, "日志面板")
+
+
 # 日志模块
     def init_log_panel(self):
         """初始化日志面板"""
@@ -294,14 +352,20 @@ class ParaReader(QMainWindow):
         self.log_panel.setTextCursor(cursor)
         self.log_panel.ensureCursorVisible()
 
-# 监听器相关模块
-    def init_listener(self):
-        """初始化监听器"""
-
+# 监听器相关方法
     def start_listener(self):
         """开始监听"""
-        str(input("请输入该批次样品总批号："))
+        print("开始监听")
+    
+    def stop_listener(self):
+        """停止监听"""
+        print("停止监听")
 
+    def export_data_csv(self):
+        """导出数据为CSV文件"""
+        print("导出数据为CSV文件")
+
+# UI相关模块
     def update_title(self, modified):
         """更新窗口标题"""
         self.is_modified = modified

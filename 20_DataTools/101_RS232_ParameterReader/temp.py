@@ -1,84 +1,84 @@
-'''imports'''
-import os
 import sys
+from PySide6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget, 
+                              QPushButton, QLabel, QVBoxLayout, QTextEdit)
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt
 
-from PySide6.QtWidgets import QMainWindow, QApplication
-
-from modules.ui.Ui_0001 import Ui_MainWindow
-import modules.utils.feedstrategies.stra_editor as stra_editor
-
-'''global variables'''
-global log
-global process_info
-process_info = None  # 用于存储进程信息
-
-global default_path
-global current_path
-current_path = os.path.abspath(os.path.dirname(__file__))  # 获取当前文件所在目录的绝对路径
-default_path = current_path                                # 固定main文件的默认路径
-
-
-'''UI class'''
-class MainWindowUi(QMainWindow):
-    global log
-    global process_info
-
-    global default_path
-    global current_path
-
-
+class TabDemo(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        '''set ui file'''
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)     # 这里使用直接通过类名调用setupUi方法，需要手动传入self参数来绑定MainWindow的组件
-
-        '''binding signals and slots'''
-        self.bind_clicks()
-
-
-    '''define slots'''
-    def bind_clicks(self):
-        self.ui.calculate_button.clicked.connect(self.calculate_button)
-        self.ui.load_stra_button.clicked.connect(self.stra_editor_button)
-        self.ui.load_stra_button_2.clicked.connect(self.stra_editor_button)
-
-    def calculate_button(self):
-        ## read the values from the spinboxes
-        be_vol = sa_vol = af_vol = 0  # 给予初始化0值，以防计算问题
-
-        def calculate(self):
-            be_vol = before_volume = float(self.ui.spinbox_before_sampling.value())
-            sa_vol = sample_volume = float(self.ui.spinbox_sampling.value())
-
-            ## calculate the feed volume
-            af_vol = after_volume = be_vol - sa_vol
-
-            def show_output(self):  # 继续使用函数嵌套的方式来定义输出函数
-                output_text = f'''
-                取样前体系质量为：
-                {be_vol}  (g)(ml)
-                取样量为：
-                {sa_vol}  (g)(ml)
-                取样后体系质量为：
-                {af_vol}  (g)(ml)
-                '''
-                self.ui.textbrowser_output.setText(output_text)
+        self.setWindowTitle("QTabWidget 示例")
+        self.setGeometry(100, 100, 600, 400)
         
-            show_output(self)  # 调用show_output函数，使能calculate函数显示输出结果
+        # 创建 QTabWidget
+        self.tabs = QTabWidget()
+        self.setCentralWidget(self.tabs)
+        
+        # 初始化三个标签页
+        self.init_first_tab()
+        self.init_second_tab()
+        self.init_third_tab()
+        
+        # 添加标签页切换事件
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+        
+        # 设置标签属性
+        self.tabs.setTabPosition(QTabWidget.North)
+        self.tabs.setMovable(True)  # 允许拖动排序
+        self.tabs.setTabsClosable(True)
+        self.tabs.tabCloseRequested.connect(self.close_tab)  # 关闭标签事件
 
-        calculate(self)  # 调用calculate函数；不调用calculate函数，无法显示输出结果
-    
+    def init_first_tab(self):
+        """第一个标签页：基础控件"""
+        widget = QWidget()
+        layout = QVBoxLayout()
+        
+        btn = QPushButton("点击测试", self)
+        btn.clicked.connect(lambda: print("第一个标签的按钮被点击"))
+        layout.addWidget(btn)
+        
+        label = QLabel("这是第一个标签页的内容")
+        layout.addWidget(label)
+        
+        widget.setLayout(layout)
+        self.tabs.addTab(widget, QIcon("icon1.png"), "标签页1")
 
-    def stra_editor_button(self):
-        self.stra_editor = stra_editor.StrategyEditor()
-        self.stra_editor.show()
+    def init_second_tab(self):
+        """第二个标签页：文本编辑器"""
+        text_edit = QTextEdit()
+        text_edit.setPlainText("在此输入文本...")
+        self.tabs.addTab(text_edit, QIcon("icon2.png"), "编辑器")
 
+    def init_third_tab(self):
+        """第三个标签页：动态内容"""
+        widget = QWidget()
+        layout = QVBoxLayout()
+        
+        self.add_tab_btn = QPushButton("添加新标签页")
+        self.add_tab_btn.clicked.connect(self.add_new_tab)
+        layout.addWidget(self.add_tab_btn)
+        
+        widget.setLayout(layout)
+        self.tabs.addTab(widget, "动态管理")
 
-# define the main window function
-if __name__ == '__main__':
+    def on_tab_changed(self, index):
+        """标签切换事件处理"""
+        print(f"切换到标签页: {self.tabs.tabText(index)}")
+
+    def close_tab(self, index):
+        """关闭标签页处理"""
+        if index != 0:  # 禁止关闭第一个标签页
+            self.tabs.removeTab(index)
+
+    def add_new_tab(self):
+        """动态添加新标签页"""
+        new_tab = QTextEdit()
+        new_tab.setPlainText(f"新标签页 {self.tabs.count() + 1}")
+        self.tabs.addTab(new_tab, f"Tab {self.tabs.count() + 1}")
+        self.tabs.setCurrentIndex(self.tabs.count() - 1)
+
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    wid = window = MainWindowUi()
-    wid.show()
-    app.exec()
+    window = TabDemo()
+    window.show()
+    sys.exit(app.exec())

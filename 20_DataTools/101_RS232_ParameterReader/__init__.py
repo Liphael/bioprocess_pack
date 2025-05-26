@@ -2,4 +2,4 @@
 # Licensed under the MIT License
 
 
-'''Bioprocess Pack - Feed Calculator Module'''
+'''Bioprocess Pack - RS232 Parameter Reader'''
