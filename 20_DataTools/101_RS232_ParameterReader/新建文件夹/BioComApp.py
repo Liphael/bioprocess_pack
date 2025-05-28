@@ -1,23 +1,25 @@
 import serial
 
+
+
 # 写入初始化串口参数，以防止串口未正确配置
-PORT = None                     # 串口号（Windows）或/dev/ttyUSB0（Linux）
-BAUDRATE = 9600                 # 波特率
-BYTESIZE = serial.EIGHTBITS     # 数据位
-PARITY = serial.PARITY_NONE     # 校验位
+PORT = 'COM3'           # 串口号（Windows）或/dev/ttyUSB0（Linux）
+BAUDRATE = 9600         # 波特率
+BYTESIZE = serial.EIGHTBITS  # 数据位
+PARITY = serial.PARITY_NONE  # 校验位
 STOPBITS = serial.STOPBITS_ONE  # 停止位
-TIMEOUT = 1                     # 读取超时时间（秒）
-INTERVAL = 0.5                  # 读取间隔（秒）
+TIMEOUT = 1             # 读取超时时间（秒）
+INTERVAL = 0.5          # 读取间隔（秒）
 
 class DefaultCfg():
     def __init__(self):
-        self.port = PORT
-        self.baudrate = BAUDRATE
-        self.bytesize = BYTESIZE
-        self.parity = PARITY
-        self.stopbits = STOPBITS
-        self.timeout = TIMEOUT
-        self.interval = INTERVAL
+        self.port = PORT           # 串口号（Windows）或/dev/ttyUSB0（Linux）
+        self.baudrate = BAUDRATE         # 波特率
+        self.bytesize = BYTESIZE  # 数据位
+        self.parity = PARITY      # 校验位
+        self.stopbits = STOPBITS  # 停止位
+        self.timeout = TIMEOUT     # 读取超时时间（秒）
+        self.interval = INTERVAL   # 读取间隔（秒）
         self.load_default_cfg()
 
     def load_default_cfg(self):
@@ -34,6 +36,7 @@ class DefaultCfg():
             print(f"加载配置文件失败: {e}")
         finally:
             print(f"当前配置: {self.__dict__}")
+        
 
 
 class CfgEditor():

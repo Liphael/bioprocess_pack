@@ -1,14 +1,24 @@
+# coding=utf-8
 import sys
+import os
 from datetime import datetime
+import serial
 import yaml
 from pathlib import Path
+
 from PySide6.QtWidgets import (QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem,
                               QFileDialog, QMessageBox, QSplitter, QTabWidget, QMenuBar,
                               QStatusBar, QInputDialog, QPlainTextEdit, QWidget, QVBoxLayout,
                               QLabel, QHBoxLayout, QLineEdit, QCheckBox, QRadioButton, QComboBox,
-                              QTableWidget, QTableWidgetItem, QAbstractItemView, QPushButton)
+                              QTableWidget, QTableWidgetItem, QAbstractItemView, QPushButton,
+                              QDialog, QListWidget)
 from PySide6.QtGui import (QAction, QIcon, QTextCursor)
 from PySide6.QtCore import (Qt, Signal, QObject, QSize)
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from mod.utils.RS232Listerner.RS232Listener import RS232Listerner
+from mod.utils.logger.logger import Logger
+
 
 class ConfigSignals(QObject):
     """信号类"""
@@ -16,11 +26,62 @@ class ConfigSignals(QObject):
     file_saved = Signal(str)
     modified = Signal(bool)
 
+class SelectionDialog(QDialog):
+    """通用列表选择对话框"""
+    def __init__(self, items, multi_select = False, parent = None):
+        super().__init__(parent)
+        self.selected_items = []
+        self.setWindowTitle("请选择")
+        self.setMinimumSize(300, 400)
+        
+        # 创建界面组件
+        self.list_widget = QListWidget()
+        self.list_widget.addItems(items)
+        
+        # 设置选择模式
+        if multi_select:
+            self.list_widget.setSelectionMode(QAbstractItemView.MultiSelection)
+        
+        # 操作按钮
+        self.confirm_btn = QPushButton("确认")
+        self.confirm_btn.clicked.connect(self.accept_selection)
+        self.cancel_btn = QPushButton("取消")
+        self.cancel_btn.clicked.connect(self.reject)
+
+        # 布局管理
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("请选择项目:"))
+        layout.addWidget(self.list_widget)
+        btn_layout = QVBoxLayout()
+        btn_layout.addWidget(self.confirm_btn)
+        btn_layout.addWidget(self.cancel_btn)
+        layout.addLayout(btn_layout)
+        self.setLayout(layout)
+
+    def accept_selection(self):
+        """获取选中项并关闭对话框"""
+        selected = [item.text() for item in self.list_widget.selectedItems()]
+        if selected:
+            self.selected_items = selected
+            self.accept()
+        else:
+            self.reject()
+
+    @staticmethod
+    def get_selection(options, multi_select=False, parent=None):
+        """静态方法快速调用"""
+        dialog = SelectionDialog(options, multi_select, parent)
+        result = dialog.exec()
+        return dialog.selected_items if result == QDialog.Accepted else None
+
+class ListenerThread(QThread):
+
 class ParaReader(QMainWindow):
     """主界面类"""
     
     def __init__(self):
         super().__init__()
+        self.is_running = False # 监听器状态
         self.current_file = None
         self.config_data = None
         self.is_modified = False
@@ -111,8 +172,8 @@ class ParaReader(QMainWindow):
         self.cfg_save_as_action.triggered.connect(self.cfg_file_save_as)
 
         # 连接编辑菜单动作按钮
-        self.start_listener_key_action.triggered.connect(self.start_listener)
-        self.export_data_key_action.triggered.connect(self.export_data_csv)
+        self.listener_trigger_button.clicked.connect(self.button_toggle)
+        self.export_data_button.clicked.connect(self.export_data_csv)
 
         # 连接信号
         self.signals.modified.connect(self.update_title) # 更新标题
@@ -267,19 +328,26 @@ class ParaReader(QMainWindow):
         operations_tab = QWidget()
         operations_tab_layout = QVBoxLayout()
         
-        self.start_listener_key_action = QAction("开始监听数据", self)
-        self.export_data_key_action = QAction("导出当前数据", self)
+        self.listener_trigger_button = QPushButton("开始监听")
         
-        start_listener_button = QPushButton("添加键")
-        start_listener_button.clicked.connect(self.start_listener_key_action.trigger)
-        export_data_button = QPushButton("删除键")
-        export_data_button.clicked.connect(self.export_data_key_action.trigger)
+        self.export_data_button = QPushButton("导出数据")
 
-        operations_tab_layout.addWidget(start_listener_button)
-        operations_tab_layout.addWidget(export_data_button)
+        operations_tab_layout.addWidget(self.listener_trigger_button)
+        operations_tab_layout.addWidget(self.export_data_button)
         operations_tab.setLayout(operations_tab_layout)
 
         self.control_panel.addTab(operations_tab, "操作面板")
+
+    def button_toggle(self):
+        """切换按钮状态"""
+        if self.is_running:
+            self.is_running = not self.is_running
+            self.stop_listener()
+        else:
+            self.is_running = not self.is_running
+            self.start_listener()
+        
+        self.listener_trigger_button.setText("停止监听" if self.is_running else "开始监听")
 
     def init_cfg_tab(self):
         """初始化配置面板"""
@@ -355,11 +423,85 @@ class ParaReader(QMainWindow):
 # 监听器相关方法
     def start_listener(self):
         """开始监听"""
-        print("开始监听")
+        print("Listener RunningStatus: "+str(self.is_running)+"  开始监听")
+        listener_id = datetime.now()
+        global Listener
+        Listener = RS232Listerner()
+        try:
+            available_ports = Listener.port_seek()
+            if not available_ports:
+                raise Exception("没有可用的串口设备")
+            port_selection = SelectionDialog.get_selection(
+                available_ports,
+                multi_select=False
+                )[0]
+
+            Listener.ser = serial.Serial(
+                port=port_selection,
+                baudrate=Listener.baudrate,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                timeout=Listener.timeout
+            )
+            
+            Listener.port = port_selection
+
+            if not Listener.ser or not Listener.ser.is_open:
+                process_info = "error#0003: COM offline or connect fail"
+                print(process_info)
+                return
+
+            self.running = True
+            process_info = f"success#0002: listening (press Ctrl+C to stop)..."
+            print(process_info)
+            try:
+                while self.running:
+                    if Listener.ser.in_waiting > 0:
+                        # 读取数据（两种方式任选其一）
+                        # raw_data = self.ser.readline()  # 方式1：按行读取
+                        raw_data = self.ser.read(self.ser.in_waiting)  # 方式2：读取全部缓存数据
+                        
+                        if raw_data:
+                            global decoded_data
+                            global data_log
+                            data_log = Logger(
+                                filename="output.csv",
+                                fieldnames=["timestamp", "message"],
+                            )
+
+                            try:
+                                # 转换为字符串（ASCII解码）
+                                decoded_data = raw_data.decode('ascii').strip()
+                                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                                print(f"[{timestamp}] RX: {decoded_data}")
+                                try:
+                                    data_log.logger_record({
+                                        "timestamp": timestamp,
+                                        "message": decoded_data
+                                    })
+                                except Exception as e:
+                                    print(f"日志记录失败: {str(e)}")
+                            except UnicodeDecodeError:
+                                # 二进制数据处理
+                                hex_data = raw_data.hex().upper()
+                                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                                print(f"[{timestamp}] HEX: {hex_data}")
+            except KeyboardInterrupt:
+                self.stop()
+            finally:
+                self.stop()
+
+        except serial.SerialException as e:
+            process_info = f"error#0002: connect fail {port} [baudrate: {baudrate}]"
+            print(process_info)
+            return False
     
     def stop_listener(self):
         """停止监听"""
-        print("停止监听")
+        print("Listener RunningStatus: "+str(self.is_running)+"  停止监听")
+        Listener.stop()
+        data_log.export_csv(new_filename=str(datetime.now()+"output.csv"))
 
     def export_data_csv(self):
         """导出数据为CSV文件"""
