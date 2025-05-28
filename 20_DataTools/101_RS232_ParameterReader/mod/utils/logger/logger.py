@@ -1,5 +1,6 @@
 import csv
 import os
+from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Union
 
@@ -53,7 +54,7 @@ class Logger:
         except Exception as e:
             raise RuntimeError(f"写入文件失败，错误: {str(e)}")
 
-    def rename_csv(self, new_filename: str = None) -> str:
+    def replace_csv(self, new_filename: str = None) -> str:
         """
         导出CSV文件（主要用于格式转换）
         
@@ -61,6 +62,12 @@ class Logger:
         new_filename: 新文件名（默认覆盖原文件）
         返回：最终文件路径
         """
+        current_dir = Path(self.filename)
         target = new_filename or self.filename
-        os.replace(self.filename, target)
-        return target
+        try:
+            Path(target).parent.mkdir(parents=True, exist_ok=True)
+            os.replace(self.filename, target)
+            self.filename = target
+            return target
+        except Exception as e:
+            raise RuntimeError(f"导出CSV文件失败，错误: {str(e)}")

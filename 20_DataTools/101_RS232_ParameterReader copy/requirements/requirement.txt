@@ -1,4 +1,0 @@
-Pandas
-Pyside6
-pyserial
-configparser

@@ -1,4 +1,3 @@
-# coding=utf-8
 import sys
 import os
 from datetime import datetime
@@ -6,17 +5,17 @@ import serial
 import yaml
 from pathlib import Path
 
-from PySide6.QtWidgets import (QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem,
-                              QFileDialog, QMessageBox, QSplitter, QTabWidget, QMenuBar,
-                              QStatusBar, QInputDialog, QPlainTextEdit, QWidget, QVBoxLayout,
-                              QLabel, QHBoxLayout, QLineEdit, QCheckBox, QRadioButton, QComboBox,
-                              QTableWidget, QTableWidgetItem, QAbstractItemView, QPushButton,
-                              QDialog, QListWidget)
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QPlainTextEdit, 
+    QTabWidget, QWidget, QVBoxLayout, QPushButton, 
+    QStatusBar, QLabel, QSplitter, 
+    QFileDialog, QMessageBox
+    )
 from PySide6.QtGui import (QAction, QIcon, QTextCursor)
-from PySide6.QtCore import (Qt, Signal, QObject, QSize)
+from PySide6.QtCore import (QThread, Signal, QObject, QSize, Qt)
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from mod.utils.RS232Listerner.RS232Listener import RS232Listerner
+from mod.ui.UiObjects.SelectionDialog import SelectionDialog
+from mod.utils.SerialWorker.SerialWorker import SerialWorker
 from mod.utils.logger.logger import Logger
 
 
@@ -26,69 +25,22 @@ class ConfigSignals(QObject):
     file_saved = Signal(str)
     modified = Signal(bool)
 
-class SelectionDialog(QDialog):
-    """通用列表选择对话框"""
-    def __init__(self, items, multi_select = False, parent = None):
-        super().__init__(parent)
-        self.selected_items = []
-        self.setWindowTitle("请选择")
-        self.setMinimumSize(300, 400)
-        
-        # 创建界面组件
-        self.list_widget = QListWidget()
-        self.list_widget.addItems(items)
-        
-        # 设置选择模式
-        if multi_select:
-            self.list_widget.setSelectionMode(QAbstractItemView.MultiSelection)
-        
-        # 操作按钮
-        self.confirm_btn = QPushButton("确认")
-        self.confirm_btn.clicked.connect(self.accept_selection)
-        self.cancel_btn = QPushButton("取消")
-        self.cancel_btn.clicked.connect(self.reject)
-
-        # 布局管理
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("请选择项目:"))
-        layout.addWidget(self.list_widget)
-        btn_layout = QVBoxLayout()
-        btn_layout.addWidget(self.confirm_btn)
-        btn_layout.addWidget(self.cancel_btn)
-        layout.addLayout(btn_layout)
-        self.setLayout(layout)
-
-    def accept_selection(self):
-        """获取选中项并关闭对话框"""
-        selected = [item.text() for item in self.list_widget.selectedItems()]
-        if selected:
-            self.selected_items = selected
-            self.accept()
-        else:
-            self.reject()
-
-    @staticmethod
-    def get_selection(options, multi_select=False, parent=None):
-        """静态方法快速调用"""
-        dialog = SelectionDialog(options, multi_select, parent)
-        result = dialog.exec()
-        return dialog.selected_items if result == QDialog.Accepted else None
-
-class ListenerThread(QThread):
-    def __init__(self):
-        super().__init__()
-        
-
 class ParaReader(QMainWindow):
     """主界面类"""
     
     def __init__(self):
         super().__init__()
-        self.is_running = False # 监听器状态
+        self.worker = None
         self.current_file = None
         self.config_data = None
         self.is_modified = False
         self.signals = ConfigSignals()
+        self.thread = None
+
+        self.data_log = Logger(
+            filename="output.csv",
+            fieldnames=["timestamp", "message"],
+        )
         
         self.init_ui()
         self.init_menu()
@@ -113,11 +65,6 @@ class ParaReader(QMainWindow):
         output_font.setFamily("Consolas")  # 等宽字体
         output_font.setPointSize(10) # 字体大小
         self.output_showcase.setFont(output_font) # 设置字体
-
-        """树形视图"""
-        self.tree = QTreeWidget()
-        self.tree.setHeaderLabel("配置结构")
-        self.tree.itemChanged.connect(self.handle_item_change)
         
         """控制面板标签组"""
         self.control_panel = QTabWidget()
@@ -169,155 +116,12 @@ class ParaReader(QMainWindow):
     def connect_signals(self):
         """连接信号与槽"""
 
-        # 连接菜单动作按钮
-        self.open_cfg_action.triggered.connect(self.open_cfg_file)
-        self.save_cfg_action.triggered.connect(self.save_cfg_file)
-        self.cfg_save_as_action.triggered.connect(self.cfg_file_save_as)
-
         # 连接编辑菜单动作按钮
-        self.listener_trigger_button.clicked.connect(self.button_toggle)
+        self.listener_trigger_button.clicked.connect(self.listener_toggle)
         self.export_data_button.clicked.connect(self.export_data_csv)
 
         # 连接信号
         self.signals.modified.connect(self.update_title) # 更新标题
-
-# 文件操作相关方法
-    def open_cfg_file(self):
-        """打开配置文件对话框"""
-        path, _ = QFileDialog.getOpenFileName(
-            self, "打开配置文件", "", 
-            "配置文件 (*.yaml *.yml);;所有文件 (*.*)"
-        )
-        if path:
-            self.load_cfg_file(path)
-
-    def load_cfg_file(self, path):
-        """加载配置文件"""
-        try:
-            with open(path, "rb") as f:
-                if path.endswith((".yaml", ".yml")):
-                    self.config_data = yaml.safe_load(f)
-            
-            self.current_file = path
-            self.build_tree()
-            self.signals.file_loaded.emit(path)
-            self.signals.modified.emit(False)
-            self.status_bar.showMessage(f"已加载文件: {path}")
-
-            self.log_message(f"配置文件已加载: {path}", "SUCCESS")
-
-        except Exception as e:
-            self.log_message(f"文件加载失败: {str(e)}", "ERROR")
-            QMessageBox.critical(self, "错误", f"文件加载失败: {str(e)}")
-
-    def save_cfg_file(self):
-        """保存当前文件"""
-        try:
-            if self.current_file:
-                self.save_to_file(self.current_file)
-            else:
-                self.cfg_file_save_as()
-
-            self.log_message(f"配置文件已保存: {path}", "SUCCESS")
-        
-        except Exception as e:
-            self.log_message(f"保存失败: {str(e)}", "ERROR")
-
-    def cfg_file_save_as(self):
-        """另存为文件"""
-        try:
-            path, _ = QFileDialog.getSaveFileName(
-                self, "保存配置文件", "",
-                "YAML文件 (*.yaml *.yml)"
-            )
-            if path:
-                self.save_to_file(path)
-                self.current_file = path
-                self.status_bar.showMessage(f"文件已保存到: {path}")
-
-            self.log_message(f"配置文件已另存为: {path}", "SUCCESS")
-        except Exception as e:
-            self.log_message(f"另存为失败: {str(e)}", "ERROR")
-            QMessageBox.critical(self, "错误", f"另存为失败: {str(e)}")
-
-    def save_to_file(self, path):
-        """将数据保存到文件"""
-        try:
-            with open(path, "w", encoding="utf-8") as f:
-                if path.endswith((".yaml", ".yml")):
-                    yaml.dump(self.config_data, f, allow_unicode=True)
-            
-            self.signals.file_saved.emit(path)
-            self.signals.modified.emit(False)
-
-            self.log_message(f"文件已成功保存: {path}", "SUCCESS")
-            QMessageBox.information(self, "保存成功", "文件已成功保存！")
-        except Exception as e:
-            QMessageBox.critical(self, "错误", f"保存失败: {str(e)}")
-
-# 树形视图相关方法
-    def build_tree(self, parent=None, data=None):
-        """构建配置树形视图"""
-        self.tree.clear()
-        data = data or self.config_data
-        parent = parent or self.tree
-        
-        if isinstance(data, dict):
-            for key, value in data.items():
-                item = QTreeWidgetItem(parent)
-                item.setText(0, str(key))
-                item.setData(0, Qt.UserRole, key)
-                item.setFlags(item.flags() | Qt.ItemIsEditable)
-                self.build_tree(item, value)
-        elif isinstance(data, list):
-            for index, value in enumerate(data):
-                item = QTreeWidgetItem(parent)
-                item.setText(0, str(index))
-                self.build_tree(item, value)
-        else:
-            item = QTreeWidgetItem(parent)
-            item.setText(0, str(data))
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
-
-    def handle_item_change(self, item):
-        """处理树节点修改"""
-        new_key = item.text(0)
-        parent = item.parent()
-        
-        try:
-            if parent:
-                parent_data = self.get_data_from_item(parent)
-                old_key = item.data(0, Qt.UserRole)
-                
-                if isinstance(parent_data, dict):
-                    parent_data[new_key] = parent_data.pop(old_key)
-                elif isinstance(parent_data, list):
-                    index = parent.indexOfChild(item)
-                    parent_data[index] = self.parse_value(new_key)
-                
-                item.setData(0, Qt.UserRole, new_key)
-            else:
-                self.config_data = self.parse_value(new_key)
-            
-            self.signals.modified.emit(True)
-        except Exception as e:
-            QMessageBox.warning(self, "修改错误", str(e))
-
-    def update_ui(self, file_path):
-        """根据文件类型更新显示"""
-        self.tree_view.clear()
-        self.table_view.clear()
-
-        if self.handler.file_type == 'json':
-            self.show_json_data(self.handler.config_data)
-        elif self.handler.file_type == 'ini':
-            self.show_ini_data(self.handler.config_data)
-        elif self.handler.file_type in ('yaml', 'yml'):
-            self.show_yaml_data(self.handler.config_data)
-
-    def show_error(self, message):
-        """显示错误信息"""
-        QMessageBox.critical(self, "错误", message)
 
 # 控制面板相关模块
     def init_control_panel(self):
@@ -341,16 +145,22 @@ class ParaReader(QMainWindow):
 
         self.control_panel.addTab(operations_tab, "操作面板")
 
-    def button_toggle(self):
+    def listener_toggle(self):
         """切换按钮状态"""
-        if self.is_running:
-            self.is_running = not self.is_running
-            self.stop_listener()
-        else:
-            self.is_running = not self.is_running
-            self.start_listener()
-        
-        self.listener_trigger_button.setText("停止监听" if self.is_running else "开始监听")
+        try:
+            if not self.worker:
+                self.start_listener()
+                self.listener_trigger_button.setText("停止监听")
+                return
+            if self.worker.running:
+                self.stop_listener()
+                self.listener_trigger_button.setText("开始监听")
+            else:
+                self.start_listener()
+                self.listener_trigger_button.setText("停止监听")
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"操作失败: {str(e)}")
+            self.log_message(f"操作失败: {str(e)}", level="FATAL")
 
     def init_cfg_tab(self):
         """初始化配置面板"""
@@ -398,7 +208,7 @@ class ParaReader(QMainWindow):
         splitter = QSplitter(Qt.Vertical)         # 调整主布局
         splitter.addWidget(self.centralWidget())  # 原有主界面
         splitter.addWidget(log_container)
-        splitter.setSizes([600, 150])
+        splitter.setSizes([500, 150])
         self.setCentralWidget(splitter)
 
     def log_message(self, message: str, level: str = "INFO"):
@@ -426,89 +236,84 @@ class ParaReader(QMainWindow):
 # 监听器相关方法
     def start_listener(self):
         """开始监听"""
-        print("Listener RunningStatus: "+str(self.is_running)+"  开始监听")
-        listener_id = datetime.now()
-        global Listener
-        Listener = RS232Listerner()
-        try:
-            available_ports = Listener.port_seek()
-            if not available_ports:
-                raise Exception("没有可用的串口设备")
-            port_selection = SelectionDialog.get_selection(
+        if self.thread and self.thread.isRunning():
+            return
+
+        # 创建线程和工作对象
+        self.thread = QThread()
+        self.port_seeker = SerialWorker()
+        available_ports = self.port_seeker.port_seek()
+        if not available_ports:
+            return
+        port_selection = SelectionDialog.get_selection(
                 available_ports,
                 multi_select=False
                 )[0]
+        self.worker = SerialWorker(port_selection, 9600)
+        self.worker.moveToThread(self.thread)
 
-            Listener.ser = serial.Serial(
-                port=port_selection,
-                baudrate=Listener.baudrate,
-                bytesize=serial.EIGHTBITS,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                timeout=Listener.timeout
-            )
-            
-            Listener.port = port_selection
+        # 连接信号
+        self.worker.data_received.connect(self.handle_data)
+        self.worker.status_updated.connect(self.update_status)
+        self.worker.error_occurred.connect(self.handle_error)
+        self.thread.started.connect(self.worker.start_monitoring)
+        self.thread.finished.connect(self.worker.deleteLater)
 
-            if not Listener.ser or not Listener.ser.is_open:
-                process_info = "error#0003: COM offline or connect fail"
-                print(process_info)
-                return
+        # 启动线程
+        self.thread.start()
 
-            self.running = True
-            process_info = f"success#0002: listening (press Ctrl+C to stop)..."
-            print(process_info)
-            try:
-                while self.running:
-                    if Listener.ser.in_waiting > 0:
-                        # 读取数据（两种方式任选其一）
-                        # raw_data = self.ser.readline()  # 方式1：按行读取
-                        raw_data = self.ser.read(self.ser.in_waiting)  # 方式2：读取全部缓存数据
-                        
-                        if raw_data:
-                            global decoded_data
-                            global data_log
-                            data_log = Logger(
-                                filename="output.csv",
-                                fieldnames=["timestamp", "message"],
-                            )
-
-                            try:
-                                # 转换为字符串（ASCII解码）
-                                decoded_data = raw_data.decode('ascii').strip()
-                                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                                print(f"[{timestamp}] RX: {decoded_data}")
-                                try:
-                                    data_log.logger_record({
-                                        "timestamp": timestamp,
-                                        "message": decoded_data
-                                    })
-                                except Exception as e:
-                                    print(f"日志记录失败: {str(e)}")
-                            except UnicodeDecodeError:
-                                # 二进制数据处理
-                                hex_data = raw_data.hex().upper()
-                                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                                print(f"[{timestamp}] HEX: {hex_data}")
-            except KeyboardInterrupt:
-                self.stop()
-            finally:
-                self.stop()
-
-        except serial.SerialException as e:
-            process_info = f"error#0002: connect fail {port} [baudrate: {baudrate}]"
-            print(process_info)
-            return False
-    
     def stop_listener(self):
         """停止监听"""
-        print("Listener RunningStatus: "+str(self.is_running)+"  停止监听")
-        Listener.stop()
-        data_log.export_csv(new_filename=str(datetime.now()+"output.csv"))
+        if self.worker and self.thread.isRunning():
+            self.worker.stop()  # 触发停止标志
+            self.thread.quit()
+            self.thread.wait()
+
+    def handle_data(self, raw_data):
+        """处理接收到的数据"""
+        try:# 转换为字符串（ASCII解码）
+            decoded_data = raw_data.decode('ascii').strip()
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            print(f"[{timestamp}] RX: {decoded_data}")
+            try:
+                self.data_log.logger_record({
+                    "timestamp": timestamp,
+                    "message": decoded_data
+                })
+            except Exception as e:
+                self.handle_error(e)
+        except UnicodeDecodeError:
+            # 二进制数据处理
+            hex_data = raw_data.hex().upper()
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            print(f"[{timestamp}] HEX: {hex_data}")
+            try:
+                self.data_log.logger_record({
+                    "timestamp": timestamp,
+                    "message": decoded_data
+                })
+            except Exception as e:
+                self.handle_error(e)
+
+    def update_status(self, message):
+        """更新状态信息"""
+        self.log_message(f"{message}", level="INFO")
+
+    def handle_error(self, error):
+        """处理错误"""
+        self.log_message(f"{str(error)}", level="WARNING")
+        self.stop_listener()
+
+    def closeEvent(self, event):
+        """窗口关闭时清理资源"""
+        self.log_message("程序即将关闭...", level="INFO")
+        self.stop_listener()
+        event.accept()
 
     def export_data_csv(self):
         """导出数据为CSV文件"""
-        print("导出数据为CSV文件")
+        self.log_message(f"导出数据为CSV文件", level="INFO")
+        self.data_log.replace_csv(new_filename=str(datetime.now().strftime("%Y%m%d-%H%M%S"))+"-output.csv")
 
 # UI相关模块
     def update_title(self, modified):
@@ -525,4 +330,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ParaReader()
     window.show()
+    time.sleep(10)
+    input("Press Enter to exit...")
     sys.exit(app.exec())

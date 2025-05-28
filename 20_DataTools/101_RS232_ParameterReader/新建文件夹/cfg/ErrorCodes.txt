@@ -1,4 +1,0 @@
-#0000: [通用信息] 执行失败; exec fail
-#0001: 未找到可用串口设备; COM device not found
-#0002: 连接失败 {port} [波特率 {baudrate}]
-#0003: 串口未打开或连接失败; COM device not connected
