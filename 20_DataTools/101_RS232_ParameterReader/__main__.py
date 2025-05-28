@@ -18,7 +18,6 @@ from mod.ui.UiObjects.SelectionDialog import SelectionDialog
 from mod.utils.SerialWorker.SerialWorker import SerialWorker
 from mod.utils.logger.logger import Logger
 
-
 class ConfigSignals(QObject):
     """信号类"""
     file_loaded = Signal(str)
@@ -330,6 +329,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ParaReader()
     window.show()
-    time.sleep(10)
-    input("Press Enter to exit...")
     sys.exit(app.exec())
