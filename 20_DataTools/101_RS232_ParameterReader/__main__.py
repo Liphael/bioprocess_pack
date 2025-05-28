@@ -5,18 +5,17 @@ import serial
 import yaml
 from pathlib import Path
 
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QPlainTextEdit, 
-    QTabWidget, QWidget, QVBoxLayout, QPushButton, 
-    QStatusBar, QLabel, QSplitter, 
-    QFileDialog, QMessageBox
-    )
+from PySide6.QtWidgets import (QApplication, QMainWindow, QPlainTextEdit, QTabWidget, QWidget, QVBoxLayout, QPushButton, QStatusBar, QLabel, QSplitter, QFileDialog, QMessageBox)
 from PySide6.QtGui import (QAction, QIcon, QTextCursor)
 from PySide6.QtCore import (QThread, Signal, QObject, QSize, Qt)
 
 from mod.ui.UiObjects.SelectionDialog import SelectionDialog
 from mod.utils.SerialWorker.SerialWorker import SerialWorker
 from mod.utils.logger.logger import Logger
+
+import logging
+logging.basicConfig(filename='debug.log', level=logging.DEBUG)
+logging.debug("脚本启动")
 
 class ConfigSignals(QObject):
     """信号类"""
@@ -45,7 +44,6 @@ class ParaReader(QMainWindow):
         self.init_menu()
         self.connect_signals()
 
-# 初始化UI界面
     def init_ui(self):
         """初始化"""
         self.setWindowTitle("Para Reader-RS232 ver_0.1.1b")
@@ -86,7 +84,6 @@ class ParaReader(QMainWindow):
         self.log_panel = QPlainTextEdit()
         self.init_log_panel()
 
-# 菜单栏模块
     def init_menu(self):
         """初始化菜单系统"""
         menubar = self.menuBar()
@@ -111,7 +108,6 @@ class ParaReader(QMainWindow):
             self.cfg_save_as_action
             ])
 
-# 信号槽定义
     def connect_signals(self):
         """连接信号与槽"""
 
@@ -122,7 +118,6 @@ class ParaReader(QMainWindow):
         # 连接信号
         self.signals.modified.connect(self.update_title) # 更新标题
 
-# 控制面板相关模块
     def init_control_panel(self):
         """初始化控制面板"""
         self.init_operations_tab()
@@ -180,8 +175,6 @@ class ParaReader(QMainWindow):
         
         self.control_panel.addTab(log_tab, "日志面板")
 
-
-# 日志模块
     def init_log_panel(self):
         """初始化日志面板"""
         self.log_panel.setReadOnly(True) # 只读
