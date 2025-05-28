@@ -12,10 +12,9 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QTreeWidget, QTreeWidg
                               QTableWidget, QTableWidgetItem, QAbstractItemView, QPushButton,
                               QDialog, QListWidget)
 from PySide6.QtGui import (QAction, QIcon, QTextCursor)
-from PySide6.QtCore import (Qt, Signal, QObject, QSize)
+from PySide6.QtCore import (QThread, Signal, QObject, QSize, Qt)
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from mod.utils.RS232Listerner.RS232Listener import RS232Listerner
 from mod.utils.logger.logger import Logger
 
 
@@ -24,10 +23,6 @@ class ConfigSignals(QObject):
     file_loaded = Signal(str)
     file_saved = Signal(str)
     modified = Signal(bool)
-
-class ListenerThread(QThread):
-    def __init__(self):
-        super().__init__()
         
 class ParaReader(QMainWindow):
     """主界面类"""
@@ -458,7 +453,7 @@ class ParaReader(QMainWindow):
 
     def export_data_csv(self):
         """导出数据为CSV文件"""
-        print("导出数据为CSV文件")
+        self.log_message(f"导出数据为CSV文件", level="INFO")
 
 # UI相关模块
     def update_title(self, modified):

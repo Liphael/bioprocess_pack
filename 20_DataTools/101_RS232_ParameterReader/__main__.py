@@ -5,17 +5,22 @@ import serial
 import yaml
 from pathlib import Path
 
+# Pyside6 modules
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPlainTextEdit, QTabWidget, QWidget, QVBoxLayout, QPushButton, QStatusBar, QLabel, QSplitter, QFileDialog, QMessageBox)
 from PySide6.QtGui import (QAction, QIcon, QTextCursor)
 from PySide6.QtCore import (QThread, Signal, QObject, QSize, Qt)
 
+# modules
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from mod.ui.UiObjects.SelectionDialog import SelectionDialog
 from mod.utils.SerialWorker.SerialWorker import SerialWorker
 from mod.utils.logger.logger import Logger
 
-import logging
-logging.basicConfig(filename='debug.log', level=logging.DEBUG)
-logging.debug("脚本启动")
+# 设置脚本目录和数据文件路径
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_path = os.path.join(script_dir, "output.csv")
+
+
 
 class ConfigSignals(QObject):
     """信号类"""
@@ -36,20 +41,16 @@ class ParaReader(QMainWindow):
         self.thread = None
 
         self.data_log = Logger(
-            filename="output.csv",
+            filename=data_path,
             fieldnames=["timestamp", "message"],
         )
         
         self.init_ui()
         self.init_menu()
-        self.connect_signals()
 
     def init_ui(self):
         """初始化"""
-        self.setWindowTitle("Para Reader-RS232 ver_0.1.1b")
-        icon = QIcon()
-        icon.addFile(u"./mod/ui/icon/biotech.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.setWindowIcon(icon)
+        self.setWindowTitle("Para Reader-RS232 ver_0.1.2b")
         self.setGeometry(100, 100, 1024, 768)
         self.setWindowOpacity(0.96)
         
@@ -108,16 +109,6 @@ class ParaReader(QMainWindow):
             self.cfg_save_as_action
             ])
 
-    def connect_signals(self):
-        """连接信号与槽"""
-
-        # 连接编辑菜单动作按钮
-        self.listener_trigger_button.clicked.connect(self.listener_toggle)
-        self.export_data_button.clicked.connect(self.export_data_csv)
-
-        # 连接信号
-        self.signals.modified.connect(self.update_title) # 更新标题
-
     def init_control_panel(self):
         """初始化控制面板"""
         self.init_operations_tab()
@@ -130,11 +121,14 @@ class ParaReader(QMainWindow):
         operations_tab_layout = QVBoxLayout()
         
         self.listener_trigger_button = QPushButton("开始监听")
-        
+        self.listener_trigger_button.clicked.connect(self.listener_toggle)
         self.export_data_button = QPushButton("导出数据")
+        self.export_data_button.clicked.connect(self.open_output_position)
+        self.clear_data_button = QPushButton("清除数据")
 
         operations_tab_layout.addWidget(self.listener_trigger_button)
         operations_tab_layout.addWidget(self.export_data_button)
+        operations_tab_layout.addWidget(self.clear_data_button)
         operations_tab.setLayout(operations_tab_layout)
 
         self.control_panel.addTab(operations_tab, "操作面板")
@@ -256,6 +250,8 @@ class ParaReader(QMainWindow):
 
     def stop_listener(self):
         """停止监听"""
+        if not self.worker:
+            return
         if self.worker and self.thread.isRunning():
             self.worker.stop()  # 触发停止标志
             self.thread.quit()
@@ -302,21 +298,16 @@ class ParaReader(QMainWindow):
         self.stop_listener()
         event.accept()
 
-    def export_data_csv(self):
+    def open_output_position(self):
         """导出数据为CSV文件"""
+        if self.worker and self.thread.isRunning():
+            QMessageBox.warning(self, "警告", "请先停止监听后再导出数据。")
+            return
+        self.data_log.close()
         self.log_message(f"导出数据为CSV文件", level="INFO")
         self.data_log.replace_csv(new_filename=str(datetime.now().strftime("%Y%m%d-%H%M%S"))+"-output.csv")
 
 # UI相关模块
-    def update_title(self, modified):
-        """更新窗口标题"""
-        self.is_modified = modified
-        title = "配置文件编辑器"
-        if self.current_file:
-            title += f" - {Path(self.current_file).name}"
-        if modified:
-            title += " *"
-        self.setWindowTitle(title)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

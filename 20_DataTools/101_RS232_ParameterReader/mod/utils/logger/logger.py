@@ -54,14 +54,11 @@ class Logger:
         except Exception as e:
             raise RuntimeError(f"写入文件失败，错误: {str(e)}")
 
+    def close(self) -> None:
+        """关闭文件句柄，释放资源"""
+        pass
+
     def replace_csv(self, new_filename: str = None) -> str:
-        """
-        导出CSV文件（主要用于格式转换）
-        
-        参数：
-        new_filename: 新文件名（默认覆盖原文件）
-        返回：最终文件路径
-        """
         current_dir = Path(self.filename)
         target = new_filename or self.filename
         try:
