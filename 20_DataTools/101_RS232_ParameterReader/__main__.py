@@ -20,6 +20,10 @@ from mod.utils.logger.logger import Logger
 script_dir = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(script_dir, "output.csv")
 
+data_log = Logger(
+    filename=data_path,
+    fieldnames=["timestamp", "message"],
+)
 
 
 class ConfigSignals(QObject):
@@ -33,17 +37,15 @@ class ParaReader(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        self.worker = None
         self.current_file = None
         self.config_data = None
         self.is_modified = False
         self.signals = ConfigSignals()
-        self.thread = None
 
-        self.data_log = Logger(
-            filename=data_path,
-            fieldnames=["timestamp", "message"],
-        )
+        self.thread = None        
+        self.worker = None
+        self.port_seeker = None
+        data_log = None
         
         self.init_ui()
         self.init_menu()
@@ -264,7 +266,7 @@ class ParaReader(QMainWindow):
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             print(f"[{timestamp}] RX: {decoded_data}")
             try:
-                self.data_log.logger_record({
+                data_log.logger_record({
                     "timestamp": timestamp,
                     "message": decoded_data
                 })
@@ -276,7 +278,7 @@ class ParaReader(QMainWindow):
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             print(f"[{timestamp}] HEX: {hex_data}")
             try:
-                self.data_log.logger_record({
+                data_log.logger_record({
                     "timestamp": timestamp,
                     "message": decoded_data
                 })
@@ -301,11 +303,11 @@ class ParaReader(QMainWindow):
     def open_output_position(self):
         """导出数据为CSV文件"""
         if self.worker and self.thread.isRunning():
-            QMessageBox.warning(self, "警告", "请先停止监听后再导出数据。")
+            QMessageBox.warning(self, "提示", "请先停止监听后再导出数据。")
             return
-        self.data_log.close()
+        data_log.close()
         self.log_message(f"导出数据为CSV文件", level="INFO")
-        self.data_log.replace_csv(new_filename=str(datetime.now().strftime("%Y%m%d-%H%M%S"))+"-output.csv")
+        data_log.replace_csv(new_filename=str(datetime.now().strftime("%Y%m%d-%H%M%S"))+"-output.csv")
 
 # UI相关模块
 
