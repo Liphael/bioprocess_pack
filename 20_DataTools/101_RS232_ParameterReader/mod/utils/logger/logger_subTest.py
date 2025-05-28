@@ -68,3 +68,29 @@ class Logger:
             return target
         except Exception as e:
             raise RuntimeError(f"导出CSV文件失败，错误: {str(e)}")
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_path = os.path.join(script_dir, "output.csv")
+data_log = Logger(
+    filename=data_path,
+    fieldnames=["timestamp", "message"],
+)
+
+import sys
+
+if __name__ == "__main__":
+    decoded_data = str("this is a test message")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    try:
+        data_log.logger_record({
+            "timestamp": timestamp,
+            "message": decoded_data
+        })
+    except Exception as e:
+        raise RuntimeError(f"FATAL: {str(e)}")
+
+    
+    print(f"New filename path: {new_filename_path}")
+    data_log.replace_csv(new_filename=new_filename_path)
+    input("Press Enter to exit...")
+    

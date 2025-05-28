@@ -125,7 +125,7 @@ class ParaReader(QMainWindow):
         self.listener_trigger_button = QPushButton("开始监听")
         self.listener_trigger_button.clicked.connect(self.listener_toggle)
         self.export_data_button = QPushButton("导出数据")
-        self.export_data_button.clicked.connect(self.open_output_position)
+        self.export_data_button.clicked.connect(self.replace_csv)
         self.clear_data_button = QPushButton("清除数据")
 
         operations_tab_layout.addWidget(self.listener_trigger_button)
@@ -300,14 +300,18 @@ class ParaReader(QMainWindow):
         self.stop_listener()
         event.accept()
 
-    def open_output_position(self):
-        """导出数据为CSV文件"""
+    def replace_csv(self):
+        """重新导出数据为CSV文件"""
         if self.worker and self.thread.isRunning():
             QMessageBox.warning(self, "提示", "请先停止监听后再导出数据。")
             return
         data_log.close()
         self.log_message(f"导出数据为CSV文件", level="INFO")
-        data_log.replace_csv(new_filename=str(datetime.now().strftime("%Y%m%d-%H%M%S"))+"-output.csv")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+
+        file_new_name = datetime.now().strftime("%Y%m%d-%H%M%S") + "-output.csv"
+        new_filename_path = os.path.join(script_dir, file_new_name)
+        data_log.replace_csv(new_filename=new_filename_path)
 
 # UI相关模块
 
