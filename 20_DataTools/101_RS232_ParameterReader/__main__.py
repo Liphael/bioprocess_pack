@@ -17,14 +17,18 @@ from mod.utils.SerialWorker.SerialWorker import SerialWorker
 from mod.utils.logger.logger import Logger
 
 # 设置脚本目录和数据文件路径
-script_dir = os.path.dirname(os.path.abspath(__file__))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+script_dir = os.path.join(current_dir, "output")
 data_path = os.path.join(script_dir, "output.csv")
 
 data_log = Logger(
     filename=data_path,
-    fieldnames=["timestamp", "message"],
+    fieldnames=["timestamp", "test_id", "Gluc", "unit1", "Lac", "unit2"],
 )
-
+operation_log = Logger(
+    filename=os.path.join(script_dir, "operation_log.csv"),
+    fieldnames=["timestamp", "type", "level", "message"],
+)
 
 class ConfigSignals(QObject):
     """信号类"""
@@ -42,6 +46,8 @@ class ParaReader(QMainWindow):
         self.is_modified = False
         self.signals = ConfigSignals()
 
+        self.message_seq = 0
+        self.test_id = 0
         self.thread = None        
         self.worker = None
         self.port_seeker = None
@@ -151,6 +157,7 @@ class ParaReader(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "错误", f"操作失败: {str(e)}")
             self.log_message(f"操作失败: {str(e)}", level="FATAL")
+            operation_log.log(f"操作失败: {str(e)}", log_type="log", level="FATAL")
 
     def init_cfg_tab(self):
         """初始化配置面板"""
@@ -263,40 +270,56 @@ class ParaReader(QMainWindow):
         """处理接收到的数据"""
         try:# 转换为字符串（ASCII解码）
             decoded_data = raw_data.decode('ascii').strip()
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            print(f"[{timestamp}] RX: {decoded_data}")
-            try:
-                data_log.logger_record({
-                    "timestamp": timestamp,
-                    "message": decoded_data
-                })
-            except Exception as e:
-                self.handle_error(e)
+            self.message_seq += 1
+            if self.message_seq == 2:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                gluc_data = decoded_data.split(",")[3]
+                unit_gluc = decoded_data.split(",")[4]
+            if self.message_seq == 5:
+                lac_data = decoded_data.split(",")[3]
+                unit_lac = decoded_data.split(",")[4]
+            if self.message_seq == 6:
+                self.message_seq = 0  # 重置消息序列
+                self.test_id += 1
+                self.log_message(f"接收到数据ID[{self.test_id}]: [Gluc]{gluc_data}{unit_gluc}, [Lac]{lac_data}{unit_lac}", level="INFO")
+                operation_log.log(f"接收到数据ID[{self.test_id}]: [Gluc]{gluc_data}{unit_gluc}, [Lac]{lac_data}{unit_lac}", log_type="data", level="INFO")
+                try:
+                    data_log.logger_record({
+                        "timestamp": timestamp,
+                        "test_id": self.test_id,
+                        "Gluc": gluc_data,
+                        "unit1": unit_gluc,
+                        "Lac": lac_data,
+                        "unit2": unit_lac
+                    })
+                except Exception as e:
+                    self.handle_error(e)
+                    self.log_message(f"数据记录失败: {str(e)}", level="FATAL")
+                    operation_log.log(f"数据记录失败: {str(e)}", log_type="log", level="FATAL")
+
         except UnicodeDecodeError:
             # 二进制数据处理
             hex_data = raw_data.hex().upper()
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            print(f"[{timestamp}] HEX: {hex_data}")
-            try:
-                data_log.logger_record({
-                    "timestamp": timestamp,
-                    "message": decoded_data
-                })
-            except Exception as e:
-                self.handle_error(e)
+            self.test_id += 1
+            self.log_message(f"接收到数据ID[{self.test_id}][二进制]: {hex_data}", level="INFO")
+            operation_log.log(f"接收到数据ID[{self.test_id}][二进制]: {hex_data}", log_type="data", level="INFO")
 
     def update_status(self, message):
         """更新状态信息"""
         self.log_message(f"{message}", level="INFO")
+        operation_log.log(f"{message}", log_type="log", level="INFO")
 
     def handle_error(self, error):
         """处理错误"""
         self.log_message(f"{str(error)}", level="WARNING")
+        operation_log.log(f"{str(error)}", log_type="log", level="WARNING")
         self.stop_listener()
 
     def closeEvent(self, event):
         """窗口关闭时清理资源"""
         self.log_message("程序即将关闭...", level="INFO")
+        operation_log.log("程序即将关闭...", log_type="log", level="INFO")
         self.stop_listener()
         event.accept()
 
@@ -307,7 +330,7 @@ class ParaReader(QMainWindow):
             return
         data_log.close()
         self.log_message(f"导出数据为CSV文件", level="INFO")
-        script_dir = os.path.dirname(os.path.abspath(__file__))
+        operation_log.log(f"导出数据为CSV文件", log_type="log", level="INFO")
 
         file_new_name = datetime.now().strftime("%Y%m%d-%H%M%S") + "-output.csv"
         new_filename_path = os.path.join(script_dir, file_new_name)
